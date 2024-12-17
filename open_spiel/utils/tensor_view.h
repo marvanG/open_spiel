@@ -35,7 +35,7 @@ class TensorView {
                        const std::array<int, Rank>& shape, bool reset)
       : values_(values), shape_(shape) {
     SPIEL_CHECK_EQ(size(), values_.size());
-    if (reset) std::fill(values.begin(), values.end(), 0);
+    if (reset) std::fill(values.begin(), values.end(), 0.0f); // changed from 0 to 0.0f to fix warning
   }
 
   constexpr int size() const {

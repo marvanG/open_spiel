@@ -173,7 +173,8 @@ void DeepSeaState::UndoAction(Player player, Action move) {
 
 void DeepSeaState::DoApplyAction(Action move) {
   const int i = player_row_ * size_ + player_col_;
-  const bool action_right = move == action_mapping_[i];
+  const bool action_right = move == action_mapping_[i]; 
+  // const bool action_right = static_cast<bool>(move) == action_mapping_[i]; // change to this if the above line doesn't work
   if (action_right) {
     ++player_col_;
   } else if (player_col_ > 0) {

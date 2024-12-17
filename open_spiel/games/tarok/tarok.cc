@@ -212,6 +212,8 @@ std::vector<Action> TarokState::LegalActions() const {
       return LegalActionsInTricksPlaying();
     case GamePhase::kFinished:
       return {};
+    default:
+      return {}; // should never happen but fixes compiler warning
   }
 }
 
@@ -441,6 +443,8 @@ std::string TarokState::ActionToString(Player player, Action action_id) const {
       return CardActionToString(action_id);
     case GamePhase::kFinished:
       return "";
+    default:
+      return "Unknown action"; // should never happen but fixes compiler warning
   }
 }
 
@@ -1031,6 +1035,8 @@ std::string GamePhaseToString(const GamePhase& game_phase) {
       return "Tricks playing";
     case GamePhase::kFinished:
       return "Finished";
+    default:
+      return "Unknown phase"; // should never happen but fixes compiler warning
   }
 }
 

@@ -44,7 +44,7 @@ MAX_RND_SEED = 9999
 DEFAULT_LLM_SEED = 42
 
 LLM_LENGTH_MESSAGE_TOKENS = 300
-LLM_LENGTH_MESSAGE_CHARS = 300
+LLM_LENGTH_MESSAGE_CHARS = 1500
 LLM_LENGTH_OBS_TOKENS = 300
 LLM_LENGTH_OBS_CHARS = 300
 LLM_LENGTH_PAYOFF_OBS_TOKENS = 300
@@ -179,16 +179,20 @@ class ChatGameState(pyspiel.State):
     return payoff_query.format(**payoff_dict)
 
   def _llm_is_terminal(self) -> bool:
+    
     ct.set_color(logging_utils.RED)
     prefix = self.get_game().llm_termination_prompt.obs_trans_prefix
     postfix = self.get_game().llm_termination_prompt.obs_trans_postfix
     if prefix or postfix:
       prompt = prefix + self.dialogue_str + postfix
+
       term_obs = self.get_game().generate_response(prompt,
                                                    seed=DEFAULT_LLM_SEED)
       logging.info(ct.color('LLM summary:\n%s'), term_obs)
+      print(f'--- LLM summary: {term_obs} ---')
     else:
       term_obs = self.dialogue_str
+    print("--- Checking if Game is Over ---")
     llm_termination = self.get_game().generate_bool(
         self.get_game().llm_termination_prompt.query.format(msg=term_obs),
         seed=DEFAULT_LLM_SEED)
@@ -280,8 +284,8 @@ class ChatGameState(pyspiel.State):
     ) % self.get_game().num_players()
 
     self._player_action = None
-    if self.get_game().llm_termination_prompt:
-      self._llm_termination = self._llm_is_terminal()
+    # if self.get_game().llm_termination_prompt: maybe we dont need this as it is called in _apply_action already
+    #   self._llm_termination = self._llm_is_terminal()
 
   def apply_msg(self, speaker_msg: str):
     """Reply to dialogue (for human players and interventions).
@@ -345,6 +349,7 @@ class ChatGameState(pyspiel.State):
     prompt, header_plain = self.action_to_prompt(action, seed, header)
     logging.info('LLM prompt:\n%s', prompt)
 
+    print("--- Generating response ---")
     response = self.get_game().generate_response(
         prompt=prompt,
         seed=seed,
@@ -391,6 +396,7 @@ class ChatGameState(pyspiel.State):
 
     if (not self.is_terminal() and
         self.get_game().reward_type == pyspiel.GameType.RewardModel.TERMINAL):
+      
       return rewards
 
     # gather private info to compute true underlying rewards
@@ -415,12 +421,14 @@ class ChatGameState(pyspiel.State):
                                payoff.obs_trans_postfix)
           logging.info(ct.color('Scoring payoff (speaker=%d:%s)...'),
                        player, name)
+          print(f'Scoring payoff (speaker={player}:{name})...')
           logging.info(ct.color('LLM prompt:\n%s'), payoff_obs_prompt)
           response = self.get_game().generate_response(
               prompt=payoff_obs_prompt,
               seed=DEFAULT_LLM_SEED,
               num_output_tokens=LLM_LENGTH_PAYOFF_OBS_TOKENS
           )
+          print(f'LLM response:\n{response}')
           payoff_obs = response[:LLM_LENGTH_PAYOFF_OBS_CHARS]
         else:
           payoff_obs = dialogue
@@ -428,16 +436,19 @@ class ChatGameState(pyspiel.State):
         query = self._build_payoff_query(payoff.query, payoff_obs, name)
         logging.info(ct.color('Calculating payoff %d (player=%d:%s)...'),
                      p, player, name)
+        print(f'Calculating payoff {p} (player={player}:{name})...')
         logging.info(ct.color('LLM prompt:\n%s'), query)
         response = self.get_game().generate_response(
             prompt=query,
             seed=DEFAULT_LLM_SEED,
             num_output_tokens=LLM_LENGTH_SCORE_TOKENS
             )
+        print(f'LLM response:\n{response}')
         logging.info(ct.color('LLM response:\n%s'), response)
 
         logging.info(ct.color('Extracting payoff %d (player=%d:%s)...'),
                      p, player, name)
+        print(f'Extracting payoff {p} (player={player}:{name})...')
         query = (f'Extract out the final value for {name} as a single ' +
                  'numeric value from the following payoff valuation. Do ' +
                  'NOT show your work:\n\n' +
@@ -449,6 +460,7 @@ class ChatGameState(pyspiel.State):
             num_output_tokens=LLM_LENGTH_SCORE_TOKENS
             )
         logging.info(ct.color('LLM response:\n%s'), response)
+        print(f'LLM response:\n{response}')
 
         player_payoff = 0  # payoff defaults to 0 if LLM parsing fails
         if text.retrieve_numeric_block(response):
@@ -458,13 +470,14 @@ class ChatGameState(pyspiel.State):
           logging.warning(
               ct.color('Payoff extraction from response failed:\n\n%s.'),
               response)
+          print(f'Payoff extraction from response failed:\n\n{response}')
         logging.info(ct.color('Extracted integer payoff (%s): %d'),
                      name, player_payoff)
         player_payoffs.append(player_payoff)
       rewards[player] = self.get_game().aggregate_payoffs(player_payoffs)
 
     ct.reset()
-
+    # print(f'\n --- compute_rewards CALLED, rewards: {rewards} --- \n')
     return rewards.astype(float)
 
   def current_player(self) -> int:

@@ -240,7 +240,7 @@ def playthrough_lines(game_string, alsologtostdout=False, action_sequence=None,
   if observation_params_string:
     add_line("observation_params: {}".format(observation_params_string))
   if seed is None:
-    seed = np.random.randint(2**32 - 1)
+    seed = np.random.randint(0, 2**32 - 1, dtype=np.uint32)
   game_type = game.get_type()
 
   observation_params = (

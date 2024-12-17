@@ -34,7 +34,7 @@ GAME_TYPE = pyspiel.GameType(
         short_name='chat_game',
         long_name='Chat Game',
         utility=pyspiel.GameType.Utility.GENERAL_SUM,
-        provides_information_state_string=False,
+        provides_information_state_string=True,
         provides_information_state_tensor=False,
         **chat_game_base.GAME_TYPE_KWARGS)
 
@@ -180,7 +180,8 @@ class ChatGame(chat_game_base.BaseChatGame):
     if self._llm_type == chat_test_utils.TestLLM.MOCK:
       self._lm = chat_test_utils.MockLLM()
     else:
-      raise NotImplementedError(f'llm_type {self._llm_type} not available.')
+      self._lm = "groq_api"
+      # raise NotImplementedError(f'llm_type {self._llm_type} not available.')
     # Define LLM model here
 
     super()._load_chat_game(observations,
@@ -213,17 +214,44 @@ class ChatGame(chat_game_base.BaseChatGame):
     if self._llm_type == chat_test_utils.TestLLM.MOCK:
       return self._lm.generate_response(prompt, seed, num_output_tokens)
     else:
-      raise NotImplementedError(f'llm_type {self._llm_type} not available.')
-    # Define generate response here
+      # raise NotImplementedError(f'llm_type {self._llm_type} not available.')
+      # print(f'\n ---PROMPT---: {prompt} \n')
+      from groq import Groq
+      api_key_path = "C:/PLUGG/1JOBB-KTH-doktor/kod/groq_API_key.txt"
+      API_KEY = open(api_key_path, "r").read().strip()
+      client = Groq(api_key= API_KEY,)
+
+      chat_completion = client.chat.completions.create(
+        messages=[
+          {
+            "role": "user",
+            "content": prompt,
+
+          }
+        ],
+        model="llama3-70b-8192",
+      )
+      # print(f'\n ---LLM RESPONSE---: {chat_completion.choices[0].message.content} \n')
+      return chat_completion.choices[0].message.content
+
 
   def generate_bool(self, prompt: str, seed: int) -> bool:
     """Returns LLM generated boolean given prompt and seed."""
+    # print(f'\n ---GENERATE BOOL CALLED--- \n')
     # Define generate bool here (e.g., for terminating an episode)
     if self._llm_type == chat_test_utils.TestLLM.MOCK:
       return self._lm.generate_bool(prompt, seed)
     else:
-      raise NotImplementedError(f'llm_type {self._llm_type} not available.')
-    # Define generate bool here
+      deal_or_no_deal = self.generate_response(prompt, seed)
+      if "yes" in deal_or_no_deal.lower() and "no" not in deal_or_no_deal.lower():
+        return True
+      elif "no" in deal_or_no_deal.lower() and "yes" not in deal_or_no_deal.lower():
+        return False
+      else: 
+        # print(f'\n ---LLM RESPONSE---: {deal_or_no_deal} \n')
+        raise ValueError(f'LLM response {deal_or_no_deal} not a boolean.')
+ 
+
 
   def make_py_observer(self,
                        iig_obs_type: Union[pyspiel.IIGObservationType,

@@ -45,6 +45,7 @@ _SAVE_PATH = flags.DEFINE_string("save_path",
                                  help="path for writing results")
 
 LLM_TYPE = chat_test_utils.TestLLM.MOCK
+# LLM_TYPE = "groq_model"
 
 
 class Domain(enum.StrEnum):
@@ -373,6 +374,7 @@ class PSROReporting(object):
     self.base_candidates = base_candidates
 
     config_dict_params = {}
+    config_dict_params["experiment_name"] = self.experiment_name
     config_dict_params["game_string"] = self.game_string
     config_dict_params["seed"] = self.seed
     config_dict_params["num_iters"] = self.num_iters

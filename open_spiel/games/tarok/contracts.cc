@@ -78,7 +78,9 @@ std::string ContractNameToString(const ContractName& contract_name) {
       return "Valat without";
     case ContractName::kNotSelected:
       return "Not selected";
-  }
+  default:
+    return "Unknown contract"; // should never happen but fixes compiler warning
+}
 }
 
 }  // namespace tarok

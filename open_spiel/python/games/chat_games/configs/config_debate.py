@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A pyspiel config for meta-generated meeting schedule negotiation games.
+"""A pyspiel config for a debate with randomly named debaters.
 """
 
 import collections
 
 from ml_collections import config_dict
 
-from open_spiel.python.games.chat_games.envs.base_envs import schedule_meeting_with_dow_info as env_schedule_meeting_with_dow_info
-from open_spiel.python.games.chat_games.envs.observations import summary
+from open_spiel.python.games.chat_games.envs.base_envs import debate_with_style_info as env_debate_with_style_info
+from open_spiel.python.games.chat_games.envs.observations import summary_debate
 from open_spiel.python.games.chat_games.envs.observations import utils as obs_utils
-from open_spiel.python.games.chat_games.envs.payoffs import schedule_meeting as payoffs_schedule_meeting
-from open_spiel.python.games.chat_games.envs.scenarios.domains import schedule_meeting as scenario_schedule_meeting
+from open_spiel.python.games.chat_games.envs.payoffs import debate as payoffs_debate
+from open_spiel.python.games.chat_games.envs.scenarios.actions import arguments
+from open_spiel.python.games.chat_games.envs.scenarios.domains import debate as scenario_debate
+from open_spiel.python.games.chat_games.envs.scenarios.players import names as names_debate
 
 
 def get_config():
@@ -33,42 +35,39 @@ def get_config():
   num_players = 2
 
   observations = [
-      obs_utils.Observation(summary.PREFIX, summary.POSTFIX)
+      obs_utils.Observation(summary_debate.PREFIX, summary_debate.POSTFIX)
       for _ in range(num_players)
   ]
 
-  header = env_schedule_meeting_with_dow_info.HEADER
+  header = env_debate_with_style_info.HEADER
 
-  payoffs = [payoffs_schedule_meeting.PAYOFF]
+  payoffs = [payoffs_debate.PAYOFF]
+
+  examples_names = names_debate.NAMES
 
   given_prompt_actions = collections.OrderedDict()
-  days = ['Monday',
-          'Tuesday',
-          'Wednesday',
-          'Thursday',
-          'Friday',
-          'Saturday',
-          'Sunday']
-  given_prompt_actions[header.action_keys[0]] = days + ['any']
-  num_days = len(days) + 1
+  given_prompt_actions[header.action_keys[0]] = arguments.STYLES + ['any']
+  num_styles = len(arguments.STYLES) + 1
 
   given_private_info = collections.OrderedDict()
-  given_private_info['day_prefs'] = [scenario_schedule_meeting.DAY_PREFS_A,
-                                     scenario_schedule_meeting.DAY_PREFS_B]
-  given_private_info['ooo_days'] = [scenario_schedule_meeting.OOO_A,
-                                    scenario_schedule_meeting.OOO_B]
+  given_private_info['info'] = ['Argue for the topic statement.',
+                                'Argue against the topic statement.']
+  given_private_info['topic'] = [scenario_debate.TOPIC_B,
+                                 scenario_debate.TOPIC_B]
 
-  scenario_a = env_schedule_meeting_with_dow_info.Scenario(
-      scenario_schedule_meeting.SCENARIO_A,
+  scenario_a = env_debate_with_style_info.Scenario(
+      '',
       'Bob',
-      'Suzy',
-      scenario_schedule_meeting.OOO_A,
-      scenario_schedule_meeting.DAY_PREFS_A,
-      'Thursday')
+      'Alice',
+      'logos',
+      scenario_debate.TOPIC_B,
+      'Argue for the topic statement.')
 
-  llm_termination_prompt = scenario_schedule_meeting.LLM_TERMINATION_PROMPT
+  examples_scenarios = [scenario_a]
 
-  params = {'num_distinct_actions': num_players * num_days,
+  llm_termination_prompt = scenario_debate.LLM_TERMINATION_PROMPT
+
+  params = {'num_distinct_actions': num_players * num_styles,
             'num_llm_seeds': 2,
             'num_players': num_players,
             'min_utility': min([float(p.min) for p in payoffs]),
@@ -83,10 +82,11 @@ def get_config():
   config.game.header = header
   config.game.payoffs = payoffs
   config.game.given_prompt_actions = given_prompt_actions
+  config.game.num_names = 10
   config.game.num_private_info = (2, 2)
-  config.game.given_names = ['Bob', 'Suzy']
+  config.game.examples_names = examples_names
   config.game.given_private_info = given_private_info
-  config.game.initial_scenario = scenario_a
+  config.game.examples_scenarios = examples_scenarios
   config.game.llm_list_suffix = 'Output: '
   config.game.llm_termination_prompt = llm_termination_prompt
 

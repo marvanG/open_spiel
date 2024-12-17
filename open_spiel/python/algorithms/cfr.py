@@ -437,6 +437,7 @@ class _CFRSolver(_CFRSolverBase):
       if self._regret_matching_plus:
         _apply_regret_matching_plus_reset(self._info_state_nodes)
       _update_current_policy(self._current_policy, self._info_state_nodes)
+    
 
 
 class CFRPlusSolver(_CFRSolver):

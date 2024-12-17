@@ -4,6 +4,14 @@
 # https://gitlab.kitware.com/cmake/cmake/-/issues/19123
 cmake_minimum_required (VERSION 3.17)
 project (open_spiel)
+# Compiler-specific configurations
+if(MSVC)
+
+  add_compile_options(/WX-)
+  # test if the if statement is working by outputing "hello msvc in use"
+  message("hello msvc in use")
+  
+endif()
 
 # Define some nice terminal colors.
 if(NOT WIN32)

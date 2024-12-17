@@ -27,9 +27,9 @@ namespace open_spiel {
 namespace twixt {
 
 // ANSI colors
-const char kAnsiRed[] = "\e[91m";
-const char kAnsiBlue[] = "\e[94m";
-const char kAnsiDefault[] = "\e[0m";
+const char kAnsiRed[] = "\x1B[91m";
+const char kAnsiBlue[] = "\x1B[94m";
+const char kAnsiDefault[] = "\x1B[0m";
 
 // helper functions
 inline int OppDir(int direction) {
