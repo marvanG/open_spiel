@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "open_spiel/games/chess/chess.h"
+#include <sys/types.h>
 
 #include <cstdint>
 #include <iterator>
@@ -472,6 +473,30 @@ bool ChessState::IsRepetitionDraw() const {
   const auto entry = repetitions_.find(Board().HashValue());
   SPIEL_CHECK_FALSE(entry == repetitions_.end());
   return entry->second >= kNumRepetitionsToDraw;
+}
+
+int ChessState::NumRepetitions(const ChessState& state) const {
+  uint64_t state_hash_value = state.Board().HashValue();
+  const auto entry = repetitions_.find(state_hash_value);
+  if (entry == repetitions_.end()) {
+    return 0;
+  } else {
+    return entry->second;
+  }
+}
+
+std::pair<std::string, std::vector<std::string>>
+ChessState::ExtractFenAndMaybeMoves() const {
+  SPIEL_CHECK_FALSE(IsChanceNode());
+  std::string initial_fen = start_board_.ToFEN(ParentGame()->IsChess960());
+  std::vector<std::string> move_lans;
+  std::unique_ptr<State> state = ParentGame()->NewInitialState(initial_fen);
+  ChessBoard board = down_cast<const ChessState&>(*state).Board();
+  for (const Move& move : moves_history_) {
+    move_lans.push_back(move.ToLAN(ParentGame()->IsChess960(), &board));
+    board.ApplyMove(move);
+  }
+  return std::make_pair(initial_fen, move_lans);
 }
 
 absl::optional<std::vector<double>> ChessState::MaybeFinalReturns() const {

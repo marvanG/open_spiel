@@ -189,6 +189,14 @@ class ChessState : public State {
   // board position has already appeared twice in the history).
   bool IsRepetitionDraw() const;
 
+  // Returns the number of times the specified state has appeared in the
+  // history.
+  int NumRepetitions(const ChessState& state) const;
+
+  // Get the FEN for this move and the list of moves in UCI format.
+  std::pair<std::string, std::vector<std::string>> ExtractFenAndMaybeMoves()
+      const;
+
   const ChessGame* ParentGame() const {
     return down_cast<const ChessGame*>(GetGame().get());
   }
